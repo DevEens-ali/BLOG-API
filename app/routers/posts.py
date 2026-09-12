@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException,Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Post
 from app.schemas import PostCreate, PostResponse, PostUpdate
+import math
 
 
 router = APIRouter(
@@ -39,13 +40,102 @@ def create_post(
 # GET ALL POSTS
 
 
-@router.get("/", response_model=list[PostResponse])
+# @router.get("/", response_model=list[PostResponse])
+# def get_all_posts(
+#     db: Session = Depends(get_db)
+# ):
+#     posts = db.query(Post).all()
+
+#     return posts
+
+# @router.get("/")
+# def get_all_post(
+#     page:int = Query(1,ge =1),
+#     limit :int = Query(10,ge=1),
+#     db:Session = Depends(get_db)
+# ):
+#     offset = (page-1)*limit
+#     posts = db.query(Post).offset(offset).limit(limit).all()
+#     return{
+#         "page": page,
+#         "limit": limit,
+#         "items": posts
+#     }
+
+@router.get("/")
 def get_all_posts(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1),
+    author_id: int | None = Query(None),
+    category_id: int | None = Query(None),
+    search: str | None = Query(None),
+    sort: str = Query("created_at"),
+    order: str = Query("desc"),
     db: Session = Depends(get_db)
 ):
-    posts = db.query(Post).all()
+    query = db.query(Post)
 
-    return posts
+    if author_id is not None:
+        query = query.filter(Post.author_id == author_id)
+
+    if category_id is not None:
+        query = query.filter(Post.category_id == category_id)
+
+    if search is not None:
+        query = query.filter(
+            (Post.title.ilike(f"%{search}%")) |
+            (Post.content.ilike(f"%{search}%"))
+        )
+
+    sort_fields = {
+        "title": Post.title,
+        "created_at": Post.created_at,
+        "updated_at": Post.updated_at
+    }
+
+    if sort not in sort_fields:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid sort field"
+        )
+
+    if order == "asc":
+        query = query.order_by(sort_fields[sort].asc())
+
+    elif order == "desc":
+        query = query.order_by(sort_fields[sort].desc())
+
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid sort order"
+        )
+
+    offset = (page - 1) * limit
+
+    posts = query.offset(offset).limit(limit).all()
+    
+    total = query.count()
+
+    offset = (page - 1) * limit
+
+    posts = query.offset(offset).limit(limit).all()
+
+    pages = math.ceil(total / limit)
+
+    # return {
+    #     "page": page,
+    #     "limit": limit,
+    #     "items": posts
+    # }
+    return {
+    "page": page,
+    "limit": limit,
+    "total": total,
+    "pages": pages,
+    "items": posts
+}
+
 
 
 
