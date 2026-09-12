@@ -12,7 +12,7 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=CategoryResponse)
+@router.post("/", response_model=CategoryResponse)  #Create NEw Category
 def create_category(
     category: CategoryCreate,
     db: Session = Depends(get_db)
@@ -27,13 +27,13 @@ def create_category(
 
     return new_category
 
-@router.get("/all_categories", response_model=list[CategoryResponse])
+@router.get("/all_categories", response_model=list[CategoryResponse])  #get all categories
 def get_all_categories(db: Session = Depends(get_db)):
     all_categories = db.query(Category).all()
 
     return all_categories
 
-@router.put("/update_category/{category_id}", response_model=CategoryResponse)
+@router.put("/update_category/{category_id}", response_model=CategoryResponse) #Update category
 def update_category(
     category_id: int,
     category: CategoryCreate,
@@ -56,7 +56,7 @@ def update_category(
 
     return existing_category
 
-@router.delete("/Delete_Category/{category_id}")
+@router.delete("/Delete_Category/{category_id}")  #Delete Category by ID
 def delete_category(
     category_id: int,
     db: Session = Depends(get_db)
@@ -76,7 +76,7 @@ def delete_category(
 
     return {"message": "Category Deleted Successfully"}
 
-@router.get("/{category_id}", response_model=CategoryResponse)
+@router.get("/{category_id}", response_model=CategoryResponse)   #Get Category by ID
 def get_category_by_id(
     category_id: int,
     db: Session = Depends(get_db)
@@ -93,7 +93,7 @@ def get_category_by_id(
 
     return existing_category
 
-@router.delete("/delete_all_categories")
+@router.delete("/delete_all_categories")    # Delete All Categories
 def delete_all_categories(
     db: Session = Depends(get_db)
 ):
