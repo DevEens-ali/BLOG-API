@@ -8,6 +8,8 @@ The API is fully documented and interactive out-of-the-box through **Swagger UI 
 
 ---
 
+Click to visit : https://blogapi-iota.vercel.app/docs
+
 ## 📌 Project Overview
 
 The **Blog API** is designed to handle all core functionalities required for a modern blogging platform. It ensures high reliability and security by implementing data validation pipelines and protecting endpoints from abuse.
