@@ -27,3 +27,7 @@ app.include_router(comments.router)
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+
+# Yeh line file ke bilkul end par paste kar den
+app = app 
