@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException,Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
+from app.rate_limiter import rate_limit
 
 from app.database import get_db
 from app.models import Post
@@ -64,6 +65,7 @@ def create_post(
 
 @router.get("/")
 def get_all_posts(
+    request: Request,
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1),
     author_id: int | None = Query(None),
@@ -73,6 +75,9 @@ def get_all_posts(
     order: str = Query("desc"),
     db: Session = Depends(get_db)
 ):
+    client_ip = request.client.host
+    rate_limit(client_ip)
+
     query = db.query(Post)
 
     if author_id is not None:
@@ -113,28 +118,27 @@ def get_all_posts(
 
     offset = (page - 1) * limit
 
-    posts = query.offset(offset).limit(limit).all()
-    
     total = query.count()
-
-    offset = (page - 1) * limit
 
     posts = query.offset(offset).limit(limit).all()
 
     pages = math.ceil(total / limit)
 
-    # return {
-    #     "page": page,
-    #     "limit": limit,
-    #     "items": posts
-    # }
     return {
-    "page": page,
-    "limit": limit,
-    "total": total,
-    "pages": pages,
-    "items": posts
-}
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "pages": pages,
+        "items": posts
+    }
+
+   
+    
+    
+
+    
+
+
 
 
 
