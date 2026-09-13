@@ -34,6 +34,7 @@ The **Blog API** is designed to handle all core functionalities required for a m
 | **Uvicorn** | High-speed ASGI web server |
 | **Swagger/OpenAPI** | Automated API interactive testing & documentation |
 | **Git / GitHub** | Version control and source code repository |
+| **Docker** | Containerization and deployment engine |
 
 ---
 
@@ -53,7 +54,7 @@ blog-api/
 │   │
 │   ├── database.py       # DB connection & SQLAlchemy config
 │   ├── models.py         # SQLAlchemy database models
-│   ├── schemas.py        # Pydantic validation & sanitization schemas
+│   ├── schemas.py        # Pydantic validation & HTML/String sanitization
 │   ├── rate_limiter.py   # IP-based rate limiting middleware
 │   └── main.py           # FastAPI application entrypoint
 │
@@ -74,11 +75,75 @@ blog-api/
 
 ---
 
+## 🚀 Getting Started
+
+Follow these steps to set up and run the application locally.
+
+### Prerequisites
+Make sure you have the following installed on your machine:
+* Python (v3.9 or higher)
+* PostgreSQL Database Server
+* Git
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com
+cd blog-api
+```
+
+### 2. Create a Virtual Environment
+```bash
+# On Linux/macOS
+python3 -m venv venv
+source venv/bin/activate
+
+# On Windows
+python -m venv venv
+venv\Scripts\activate
+```
+
+### 3. Install Dependencies
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### 4. Configure Environment Variables
+Create a `.env` file in the root directory of the project and add your database configuration:
+
+```env
+DATABASE_URL=postgresql://your_user:your_password@localhost:5432/blog_db
+```
+
+### 5. Run the Application
+Start the Uvicorn local development server:
+```bash
+uvicorn app.main:app --reload
+```
+The server will start running at `http://127.0.0.1:8000`.
+
+---
+
+## 🐳 Docker Deployment
+
+If you prefer running the application inside a isolated container environment, you can use Docker.
+
+### Build the Docker Image
+```bash
+docker build -t blog-api .
+```
+
+### Run the Docker Container
+```bash
+docker run -d --name blog-api-container -p 8000:8000 --env-file .env blog-api
+```
+
+---
+
 ## 🗄️ Database Design & Relationships
 
 The relational database structure consists of 4 main entities mapped using **SQLAlchemy ORM**.
 
-┌─────────── User ───────────┐│                            │▼ 1:M                        ▼ 1:MPosts                        Comments▲                            ▲│ 1:M                        │ 1:MCategory                      [Post]
 ### Table Schemas
 * **`users`:** `id` (PK), `name`, `email` (Unique), `password` (Hashed)
 * **`categories`:** `id` (PK), `name` (Unique)
@@ -93,7 +158,7 @@ The relational database structure consists of 4 main entities mapped using **SQL
 
 ---
 
-## 🚀 API Endpoints Reference
+## 📡 API Endpoints Reference
 
 ### 👤 Users Management
 
@@ -114,13 +179,6 @@ The relational database structure consists of 4 main entities mapped using **SQL
 | `GET` | `/categories/{id}` | Fetch category details by ID |
 | `PUT` | `/categories/{id}` | Update a category name |
 | `DELETE` | `/categories/{id}` | Remove a category |
-
-* **Example Payload (`POST /categories/`):**
-```json
-{
-  "name": "Technology"
-}
-```
 
 ### 📝 Blog Posts
 
@@ -152,15 +210,6 @@ The relational database structure consists of 4 main entities mapped using **SQL
 | `PUT` | `/comments/{id}` | Edit comment content |
 | `DELETE` | `/comments/{id}` | Remove a comment |
 
-* **Example Payload (`POST /comments/`):**
-```json
-{
-  "content": "Great article!",
-  "author_id": 1,
-  "post_id": 1
-}
-```
-
 ---
 
 ## ⚡ Querying, Performance & Security
@@ -174,7 +223,6 @@ To optimize payload delivery, the `GET /posts/` endpoint paginates large collect
   *(e.g., Page 2 skips the first 10 records and reads from the 11th).*
 
 #### Pagination Metadata Output
-Every paginated response includes complete context metadata for simple frontend consumption:
 ```json
 {
   "page": 2,
@@ -198,8 +246,6 @@ Posts can be ordered dynamically based on strict pre-validated database attribut
 * **Allowed Order:** `asc` (Ascending) or `desc` (Descending)
 * **Example:** `GET /posts/?sort=created_at&order=desc`
 
-> ⚠️ **Security Note:** The sorting parameter strictly validates input before passing fields to the ORM query layer, safeguarding against unexpected database manipulation.
-
 ---
 
 ## 🛡️ Security Features
@@ -214,12 +260,6 @@ Client Request ──► [ Rate Limiter Check ] ──┬─► Allowed (Within 
                                             └─► Exceeded ───────────────► HTTP 429 Error
 ```
 
-* **Rate Limiter Payload Output:**
-```json
-{
-  "detail": "Too many requests. Please try again later."
-}
-```
 > 💡 *Note: The current tracking logic utilizes an in-memory window mechanism ideal for small scales. For heavy-traffic distributed architectures, swapping out the memory driver for a shared **Redis server** setup is highly recommended.*
 
 ### 🧹 Input Validation & Sanitization
@@ -241,3 +281,12 @@ All incoming string data payloads undergo runtime cleaning and schema validation
   "content": "Hello FastAPI"
 }
 ```
+
+---
+
+## 📖 API Documentation & Testing
+
+FastAPI automatically generates interactive documentations. Once your server is running, you can explore and test the endpoints directly from your browser:
+
+* **Interactive Swagger UI:** `http://127.0.0` (Allows executing direct sample HTTP requests).
+* **Alternative ReDoc UI:** `http://127.0.0` (Clean, organized API blueprint viewing).
